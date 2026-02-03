@@ -1,18 +1,18 @@
 import axios from 'axios';
 
-// Create axios instance with base URL - SIMPLIFIED VERSION
+// Create axios instance with base URL - UPDATED FOR PRODUCTION
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  timeout: 10000, // 10 seconds timeout (reduced for faster feedback)
+  baseURL: process.env.REACT_APP_API_URL || 'https://ruda-paints-backend.onrender.com/api',
+  timeout: 15000, // Increased timeout for production
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  // Temporarily disable withCredentials to avoid CORS issues
-  // withCredentials: true,
+  // Keep withCredentials for authentication if needed
+  withCredentials: false, // Set to false for cross-domain requests
 });
 
-// Request interceptor - SIMPLIFIED
+// Request interceptor - SIMPLIFIED FOR PRODUCTION
 API.interceptors.request.use(
   (config) => {
     // Get token from localStorage
@@ -23,9 +23,9 @@ API.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Log request in development
+    // Log request in development only
     if (process.env.NODE_ENV === 'development') {
-      console.log(`📨 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+      console.log(`📨 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     }
     
     return config;
@@ -36,7 +36,7 @@ API.interceptors.request.use(
   }
 );
 
-// Response interceptor - IMPROVED ERROR HANDLING
+// Response interceptor - PRODUCTION READY
 API.interceptors.response.use(
   (response) => {
     // Log successful response in development
@@ -46,64 +46,57 @@ API.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Enhanced error logging
-    console.group('❌ API Error Details');
-    console.error('Message:', error.message);
-    console.error('Code:', error.code);
-    console.error('URL:', error.config?.baseURL + error.config?.url);
-    console.error('Method:', error.config?.method);
+    // Production-friendly error logging
+    const errorMessage = error.message || 'Unknown error occurred';
+    const errorCode = error.code || 'UNKNOWN';
+    const requestUrl = error.config?.url || 'Unknown URL';
+    
+    console.error(`❌ API Error [${errorCode}]: ${errorMessage} at ${requestUrl}`);
     
     if (error.response) {
       // The request was made and the server responded with a status code
-      console.error('Status:', error.response.status);
-      console.error('Status Text:', error.response.statusText);
-      console.error('Response Data:', error.response.data);
+      console.error(`📊 Server Response: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
     } else if (error.request) {
       // The request was made but no response was received
-      console.error('Request made but no response received');
-      console.error('Request:', error.request);
+      console.error('🌐 No response received from server');
     }
-    console.groupEnd();
     
-    // User-friendly error messages
-    let userMessage = 'An unexpected error occurred';
+    // User-friendly error messages for production
+    let userMessage = 'An error occurred. Please try again later.';
     let errorType = 'unknown';
     
     if (error.code === 'ECONNABORTED') {
-      userMessage = 'Request timeout. The server is taking too long to respond.';
+      userMessage = 'The request took too long. Please check your connection and try again.';
       errorType = 'timeout';
     } else if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
-      userMessage = 'Network error. Please check:';
-      userMessage += '\n1. Is the backend server running? (npm start in backend folder)';
-      userMessage += '\n2. Check browser console for CORS errors';
-      userMessage += '\n3. Try visiting: http://localhost:5000/api/health';
+      userMessage = 'Unable to connect to the server. Please check your internet connection.';
       errorType = 'network';
     } else if (error.response) {
-      // Server responded with error status
       errorType = 'server';
       switch (error.response.status) {
         case 400:
-          userMessage = error.response.data?.message || 'Bad request. Please check your input.';
+          userMessage = error.response.data?.message || 'Invalid request. Please check your input.';
           break;
         case 401:
-          userMessage = 'Unauthorized. Please login again.';
+          userMessage = 'Please login again to continue.';
+          // Clear auth data if token is invalid
+          if (localStorage.getItem('rudapaints_admin_token')) {
+            localStorage.removeItem('rudapaints_admin_token');
+            localStorage.removeItem('rudapaints_admin');
+          }
           break;
         case 403:
-          userMessage = 'Access forbidden. You may need admin privileges.';
+          userMessage = 'You do not have permission to access this resource.';
           break;
         case 404:
-          userMessage = 'Resource not found. The endpoint may not exist.';
+          userMessage = 'The requested resource was not found.';
           break;
         case 500:
-          userMessage = 'Server error. Please try again later.';
+          userMessage = 'Server error. Our team has been notified. Please try again later.';
           break;
         default:
           userMessage = error.response.data?.message || `Error ${error.response.status}`;
       }
-    } else if (error.request) {
-      // No response received
-      userMessage = 'No response from server. The backend might be down.';
-      errorType = 'no_response';
     }
     
     // Return formatted error
@@ -112,87 +105,78 @@ API.interceptors.response.use(
       message: userMessage,
       type: errorType,
       originalError: error,
-      url: error.config?.url,
+      url: requestUrl,
       data: error.response?.data
     });
   }
 );
 
-// Test backend connection directly (bypassing axios instance for better debugging)
+// Test backend connection - UPDATED FOR PRODUCTION
 export const testBackendConnection = async () => {
-  console.log('🔗 Testing backend connection...');
-  const backendURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const backendURL = process.env.REACT_APP_API_URL || 'https://ruda-paints-backend.onrender.com/api';
   
   try {
-    // Test multiple endpoints
-    const endpoints = [
-      '/health',
-      '/test',
-      '/'
-    ];
+    console.log(`🔗 Testing backend connection to: ${backendURL}/health`);
     
-    for (const endpoint of endpoints) {
-      console.log(`🔄 Testing: ${backendURL}${endpoint}`);
-      try {
-        const response = await fetch(`${backendURL}${endpoint}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          mode: 'cors',
-          cache: 'no-cache'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`✅ ${endpoint} is accessible`);
-          return {
-            connected: true,
-            endpoint,
-            data,
-            url: backendURL
-          };
-        }
-      } catch (err) {
-        console.log(`⚠️  ${endpoint} failed: ${err.message}`);
-      }
-    }
+    // Try the health endpoint first
+    const response = await fetch(`${backendURL}/health`, {
+      method: 'GET',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors',
+      cache: 'no-cache'
+    });
     
-    // If all endpoints fail, try direct fetch without /api
-    const baseURL = backendURL.replace('/api', '');
-    console.log(`🔄 Testing base URL: ${baseURL}/api/health`);
-    
-    try {
-      const response = await fetch(`${baseURL}/api/health`, {
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`✅ Backend connected successfully!`);
+      console.log(`📊 Status: ${data.status}`);
+      console.log(`🗄️ Database: ${data.database?.status || 'Unknown'}`);
+      
+      return {
+        connected: true,
+        database: data.database?.status || 'unknown',
+        uptime: data.uptime?.seconds || 0,
+        url: backendURL,
+        data: data
+      };
+    } else {
+      // Try the test endpoint as fallback
+      console.log(`⚠️  Health endpoint failed, trying test endpoint...`);
+      
+      const testResponse = await fetch(`${backendURL}/test`, {
         method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
         mode: 'cors'
       });
       
-      if (response.ok) {
-        const data = await response.json();
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log(`✅ Backend test endpoint is working`);
+        
         return {
           connected: true,
-          endpoint: '/health',
-          data,
-          url: baseURL
+          database: 'test_success',
+          uptime: 0,
+          url: backendURL,
+          data: testData
         };
       }
-    } catch (err) {
-      console.log(`⚠️  Base URL also failed: ${err.message}`);
+      
+      throw new Error(`Health check failed with status: ${response.status}`);
     }
     
-    return {
-      connected: false,
-      error: 'All connection attempts failed',
-      url: backendURL,
-      suggestion: 'Please check if backend server is running on port 5000'
-    };
-    
   } catch (error) {
-    console.error('❌ Connection test error:', error);
+    console.error('❌ Backend connection test failed:', error.message);
+    
     return {
       connected: false,
-      error: error.message,
+      database: 'disconnected',
+      message: `Cannot connect to backend: ${error.message}`,
       url: backendURL,
-      suggestion: 'Make sure backend is running: npm start in backend folder'
+      suggestion: 'Please ensure the backend server is running and accessible.'
     };
   }
 };
@@ -292,7 +276,8 @@ export const adminAPI = {
   
   checkAuth: () => {
     const token = localStorage.getItem('rudapaints_admin_token');
-    return !!token;
+    const adminData = localStorage.getItem('rudapaints_admin');
+    return !!(token && adminData);
   },
   
   getToken: () => localStorage.getItem('rudapaints_admin_token'),
@@ -352,8 +337,12 @@ export const getImageUrl = (imagePath) => {
     return imagePath;
   }
   
-  // Otherwise, construct URL from base
-  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  // For production, use your Render backend URL
+  const baseURL = process.env.NODE_ENV === 'production' 
+    ? 'https://ruda-paints-backend.onrender.com'
+    : 'http://localhost:5000';
+  
+  // Remove '/api' if present in baseURL
   const cleanBaseURL = baseURL.replace('/api', '');
   const cleanImagePath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   
