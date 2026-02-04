@@ -1,32 +1,49 @@
 import axios from 'axios';
 
-// Create axios instance with base URL - UPDATED FOR PRODUCTION
+// Create axios instance with base URL - FIXED VERSION
+// Ensure we have the correct API URL structure
+const getBaseURL = () => {
+  // If environment variable is set, use it
+  const envURL = process.env.REACT_APP_API_URL;
+  
+  if (envURL) {
+    // If it already ends with /api, use as is
+    if (envURL.endsWith('/api')) {
+      return envURL;
+    }
+    // If it ends with slash, add api
+    if (envURL.endsWith('/')) {
+      return envURL + 'api';
+    }
+    // Otherwise add /api
+    return envURL + '/api';
+  }
+  
+  // Default production URL with /api
+  return 'https://ruda-paints-backend.onrender.com/api';
+};
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://ruda-paints-backend.onrender.com/api',
-  timeout: 15000, // Increased timeout for production
+  baseURL: getBaseURL(),
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  // Keep withCredentials for authentication if needed
-  withCredentials: false, // Set to false for cross-domain requests
+  withCredentials: false,
 });
 
-// Request interceptor - SIMPLIFIED FOR PRODUCTION
+// Request interceptor
 API.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
     const token = localStorage.getItem('rudapaints_admin_token');
     
-    // If token exists, add to headers
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Log request in development only
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`📨 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    }
+    // Debug log - always show in production to help troubleshooting
+    console.log(`📨 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     
     return config;
   },
@@ -36,32 +53,23 @@ API.interceptors.request.use(
   }
 );
 
-// Response interceptor - PRODUCTION READY
+// Response interceptor
 API.interceptors.response.use(
   (response) => {
-    // Log successful response in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`✅ API Response: ${response.status} ${response.config.url}`);
-    }
+    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
-    // Production-friendly error logging
     const errorMessage = error.message || 'Unknown error occurred';
     const errorCode = error.code || 'UNKNOWN';
-    const requestUrl = error.config?.url || 'Unknown URL';
+    const fullURL = error.config?.baseURL + error.config?.url;
     
-    console.error(`❌ API Error [${errorCode}]: ${errorMessage} at ${requestUrl}`);
+    console.error(`❌ API Error [${errorCode}]: ${errorMessage} at ${fullURL}`);
     
     if (error.response) {
-      // The request was made and the server responded with a status code
       console.error(`📊 Server Response: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('🌐 No response received from server');
     }
     
-    // User-friendly error messages for production
     let userMessage = 'An error occurred. Please try again later.';
     let errorType = 'unknown';
     
@@ -79,7 +87,6 @@ API.interceptors.response.use(
           break;
         case 401:
           userMessage = 'Please login again to continue.';
-          // Clear auth data if token is invalid
           if (localStorage.getItem('rudapaints_admin_token')) {
             localStorage.removeItem('rudapaints_admin_token');
             localStorage.removeItem('rudapaints_admin');
@@ -89,7 +96,7 @@ API.interceptors.response.use(
           userMessage = 'You do not have permission to access this resource.';
           break;
         case 404:
-          userMessage = 'The requested resource was not found.';
+          userMessage = 'The requested resource was not found. Please check the URL.';
           break;
         case 500:
           userMessage = 'Server error. Our team has been notified. Please try again later.';
@@ -99,27 +106,26 @@ API.interceptors.response.use(
       }
     }
     
-    // Return formatted error
     return Promise.reject({
       status: error.response?.status || 0,
       message: userMessage,
       type: errorType,
       originalError: error,
-      url: requestUrl,
+      url: fullURL,
       data: error.response?.data
     });
   }
 );
 
-// Test backend connection - UPDATED FOR PRODUCTION
+// Test backend connection - FIXED
 export const testBackendConnection = async () => {
-  const backendURL = process.env.REACT_APP_API_URL || 'https://ruda-paints-backend.onrender.com/api';
+  const backendURL = process.env.REACT_APP_API_URL || 'https://ruda-paints-backend.onrender.com';
   
   try {
-    console.log(`🔗 Testing backend connection to: ${backendURL}/health`);
+    console.log(`🔗 Testing backend connection to: ${backendURL}/api/health`);
     
-    // Try the health endpoint first
-    const response = await fetch(`${backendURL}/health`, {
+    // Try the health endpoint
+    const response = await fetch(`${backendURL}/api/health`, {
       method: 'GET',
       headers: { 
         'Content-Type': 'application/json',
@@ -132,8 +138,6 @@ export const testBackendConnection = async () => {
     if (response.ok) {
       const data = await response.json();
       console.log(`✅ Backend connected successfully!`);
-      console.log(`📊 Status: ${data.status}`);
-      console.log(`🗄️ Database: ${data.database?.status || 'Unknown'}`);
       
       return {
         connected: true,
@@ -143,28 +147,6 @@ export const testBackendConnection = async () => {
         data: data
       };
     } else {
-      // Try the test endpoint as fallback
-      console.log(`⚠️  Health endpoint failed, trying test endpoint...`);
-      
-      const testResponse = await fetch(`${backendURL}/test`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
-      
-      if (testResponse.ok) {
-        const testData = await testResponse.json();
-        console.log(`✅ Backend test endpoint is working`);
-        
-        return {
-          connected: true,
-          database: 'test_success',
-          uptime: 0,
-          url: backendURL,
-          data: testData
-        };
-      }
-      
       throw new Error(`Health check failed with status: ${response.status}`);
     }
     
@@ -181,7 +163,7 @@ export const testBackendConnection = async () => {
   }
 };
 
-// Products API
+// Products API - UPDATED to use correct endpoints
 export const productsAPI = {
   getAll: (params = {}) => API.get('/paints', { params }),
   
@@ -342,11 +324,9 @@ export const getImageUrl = (imagePath) => {
     ? 'https://ruda-paints-backend.onrender.com'
     : 'http://localhost:5000';
   
-  // Remove '/api' if present in baseURL
-  const cleanBaseURL = baseURL.replace('/api', '');
   const cleanImagePath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   
-  return `${cleanBaseURL}${cleanImagePath}`;
+  return `${baseURL}${cleanImagePath}`;
 };
 
 // Export API instance for direct use
