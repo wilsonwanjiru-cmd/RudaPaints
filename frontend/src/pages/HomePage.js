@@ -21,7 +21,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import StarIcon from '@mui/icons-material/Star';
-import { testBackendConnection, productsAPI } from '../services/api';
+import { testBackendConnection, productsAPI, getImageUrl } from '../services/api';
 
 const HomePage = () => {
   const [apiStatus, setApiStatus] = useState(null);
@@ -44,9 +44,9 @@ const HomePage = () => {
       const response = await testBackendConnection();
       setApiStatus({
         status: 'online',
-        database: response.data.database,
+        database: response.data?.database || response.database || 'unknown',
         message: 'API is connected and working',
-        uptime: response.data.uptime,
+        uptime: response.data?.uptime || response.uptime || 0,
       });
     } catch (error) {
       setApiStatus({
@@ -62,11 +62,25 @@ const HomePage = () => {
     try {
       setLoading(true);
       const response = await productsAPI.getAll();
+      
+      // Handle different response structures
+      let paints = [];
+      if (response && response.data) {
+        if (Array.isArray(response.data)) {
+          paints = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          paints = response.data.data;
+        } else if (response.data.paints && Array.isArray(response.data.paints)) {
+          paints = response.data.paints;
+        }
+      }
+      
       // Get latest 4 paints as featured, or if less than 4, get all
-      const featured = response.data.slice(0, 4);
+      const featured = paints.slice(0, 4);
       setFeaturedPaints(featured);
     } catch (error) {
       console.error('Error fetching featured paints:', error);
+      setFeaturedPaints([]);
     } finally {
       setLoading(false);
     }
@@ -75,17 +89,27 @@ const HomePage = () => {
   const fetchStats = async () => {
     try {
       const response = await productsAPI.getAll();
-      const paints = response.data;
+      
+      let paints = [];
+      if (response && response.data) {
+        if (Array.isArray(response.data)) {
+          paints = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          paints = response.data.data;
+        } else if (response.data.paints && Array.isArray(response.data.paints)) {
+          paints = response.data.paints;
+        }
+      }
       
       if (paints.length > 0) {
         const categories = [...new Set(paints.map(paint => paint.category))];
-        const totalPrice = paints.reduce((sum, paint) => sum + paint.price, 0);
+        const totalPrice = paints.reduce((sum, paint) => sum + (paint.price || 0), 0);
         const averagePrice = Math.round(totalPrice / paints.length);
         
         setStats({
           totalProducts: paints.length,
           categories: categories.length,
-          averagePrice: averagePrice,
+          averagePrice: averagePrice || 0,
         });
       }
     } catch (error) {
@@ -497,7 +521,7 @@ const HomePage = () => {
         ) : (
           <Grid container spacing={4}>
             {featuredPaints.map((paint) => (
-              <Grid item xs={12} sm={6} lg={3} key={paint._id}>
+              <Grid item xs={12} sm={6} lg={3} key={paint._id || paint.id}>
                 <Card sx={{ 
                   height: '100%', 
                   display: 'flex', 
@@ -516,7 +540,7 @@ const HomePage = () => {
                       <CardMedia
                         component="img"
                         height="200"
-                        image={`http://localhost:5000${paint.image}`}
+                        image={getImageUrl(paint.image)}
                         alt={paint.name}
                         sx={{ 
                           objectFit: 'cover',
@@ -524,6 +548,10 @@ const HomePage = () => {
                           '&:hover': {
                             transform: 'scale(1.05)',
                           },
+                        }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/300x200/1976d2/ffffff?text=Ruda+Paints';
                         }}
                       />
                       <Box sx={{
@@ -537,7 +565,7 @@ const HomePage = () => {
                         py: 0.5,
                       }}>
                         <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                          {paint.size}
+                          {paint.size || 'Standard'}
                         </Typography>
                       </Box>
                     </Box>
@@ -545,10 +573,10 @@ const HomePage = () => {
                   <CardContent sx={{ flexGrow: 1, p: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                       <Typography variant="h6" component="h3" sx={{ fontWeight: 600, pr: 1 }}>
-                        {paint.name}
+                        {paint.name || 'Paint Name'}
                       </Typography>
                       <Chip 
-                        label={paint.category} 
+                        label={paint.category || 'General'} 
                         size="small" 
                         color="primary" 
                         variant="outlined"
@@ -557,7 +585,7 @@ const HomePage = () => {
                     </Box>
                     
                     <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                      {paint.brand}
+                      {paint.brand || 'Ruda Paints'}
                     </Typography>
                     
                     {paint.description && (
@@ -596,7 +624,7 @@ const HomePage = () => {
                       mt: 'auto',
                       textAlign: 'right',
                     }}>
-                      KES {paint.price.toLocaleString()}
+                      KES {(paint.price || 0).toLocaleString()}
                     </Typography>
                   </CardContent>
                   <CardActions sx={{ p: 3, pt: 0 }}>

@@ -25,36 +25,48 @@ const logsDir = path.join(__dirname, 'logs');
 // Security and performance settings
 app.set('trust proxy', 1);
 
-// **PRODUCTION CORS CONFIGURATION - SIMPLIFIED**
+// **UPDATED PRODUCTION CORS CONFIGURATION - WITH CUSTOM DOMAIN**
+// =============================================================
 const allowedOrigins = [
+    // Development origins
     'http://localhost:3000',
     'http://localhost:5000',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5000',
-    'https://ruda-paints-frontend.onrender.com',
+    
+    // Production origins - UPDATED WITH HTTP ORIGIN
+    'http://rudapaints.com',            // ADDED: HTTP version for root domain
+    'https://rudapaints.com',           // Your new custom domain
+    'https://www.rudapaints.com',       // www version
+    'https://ruda-paints-frontend.onrender.com', // Your Render frontend URL (keep as backup)
 ];
 
-// Apply CORS middleware with simplified options
+// Apply CORS middleware with updated options
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        // Allow all in development
+        // Allow all in development for easier testing
         if (process.env.NODE_ENV !== 'production') {
+            console.log(`🔓 Development: Allowing origin ${origin}`);
             return callback(null, true);
         }
         
-        // Check if the origin is allowed
+        // Check if the origin is allowed in production
         if (allowedOrigins.includes(origin)) {
+            console.log(`✅ Production: Allowed origin ${origin}`);
             callback(null, true);
         } else {
-            console.log(`🚫 CORS blocked: ${origin}`);
+            console.log(`🚫 CORS blocked in production: ${origin}`);
+            console.log(`   Allowed origins: ${allowedOrigins.join(', ')}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
 // Body parsers
@@ -68,7 +80,11 @@ app.use(express.urlencoded({
 
 // Static files
 app.use('/uploads', express.static(uploadsDir, {
-    maxAge: '1y'
+    maxAge: '1y',
+    setHeaders: (res, path) => {
+        // Allow CORS for uploaded images
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
 }));
 
 // Request logging middleware
@@ -78,7 +94,13 @@ app.use((req, res, next) => {
     
     res.on('finish', () => {
         const duration = Date.now() - start;
-        console.log(`[${requestId}] ${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
+        const logMessage = `[${requestId}] ${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`;
+        
+        if (res.statusCode >= 400) {
+            console.error(`❌ ${logMessage}`);
+        } else {
+            console.log(`📝 ${logMessage}`);
+        }
     });
     
     res.setHeader('X-Request-ID', requestId);
@@ -179,7 +201,7 @@ app.use('/api/price-list', priceListRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 
-// Health check endpoint
+// Health check endpoint - ENHANCED FOR MONITORING
 app.get('/api/health', async (req, res) => {
     try {
         const dbStatus = mongoose.connection.readyState;
@@ -190,11 +212,16 @@ app.get('/api/health', async (req, res) => {
             3: 'disconnecting'
         }[dbStatus] || 'unknown';
 
+        // Get request origin for debugging
+        const origin = req.headers.origin || req.headers.referer || 'unknown';
+        
         const healthData = {
             status: dbStatus === 1 ? 'healthy' : 'degraded',
             timestamp: new Date().toISOString(),
             service: 'Ruda Paints API',
             environment: process.env.NODE_ENV || 'development',
+            custom_domain: 'api.rudapaints.com', // UPDATED: Show actual API domain
+            request_origin: origin,
             database: {
                 status: dbStatusText,
                 readyState: dbStatus,
@@ -210,32 +237,40 @@ app.get('/api/health', async (req, res) => {
             }
         };
 
+        // Add CORS headers explicitly for health endpoint
+        res.setHeader('Access-Control-Allow-Origin', '*');
         res.json(healthData);
     } catch (error) {
         res.status(500).json({
             status: 'unhealthy',
             timestamp: new Date().toISOString(),
-            error: error.message
+            error: error.message,
+            environment: process.env.NODE_ENV || 'development'
         });
     }
 });
 
-// Simple test endpoint
+// Simple test endpoint - UPDATED WITH CORS HEADERS
 app.get('/api/test', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({
         success: true,
         message: 'Ruda Paints API is working!',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        domain: 'api.rudapaints.com', // UPDATED: Show actual API domain
+        cors_allowed: allowedOrigins
     });
 });
 
-// Welcome route
+// Welcome route - UPDATED FOR CUSTOM DOMAIN
 app.get('/', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({
         message: '🎨 Welcome to Ruda Paints Enterprise API',
-        version: '1.0.0',
+        version: '2.0.0',
         status: 'running',
+        domain: 'api.rudapaints.com', // UPDATED: Show actual API domain
         endpoints: {
             health: '/api/health',
             paints: '/api/paints',
@@ -254,9 +289,11 @@ app.get('/', (req, res) => {
 
 // API documentation
 app.get('/api/docs', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({
         title: 'Ruda Paints API Documentation',
         baseUrl: `${req.protocol}://${req.get('host')}/api`,
+        productionUrl: 'https://api.rudapaints.com/api', // UPDATED: Correct API URL
         endpoints: {
             paints: '/paints',
             priceList: '/price-list',
@@ -264,7 +301,10 @@ app.get('/api/docs', (req, res) => {
             newsletter: '/newsletter',
             admin: '/admin'
         },
-        authentication: 'Bearer token required for admin endpoints'
+        authentication: 'Bearer token required for admin endpoints',
+        cors: {
+            allowed_origins: allowedOrigins
+        }
     });
 });
 
@@ -309,6 +349,8 @@ app.use((err, req, res, next) => {
         response.stack = err.stack;
     }
 
+    // Add CORS headers even for errors
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(statusCode).json(response);
 });
 
@@ -325,6 +367,7 @@ const startServer = async () => {
         // Connect to database
         console.log('🔄 Starting Ruda Paints Server...');
         console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🌐 Custom API Domain: api.rudapaints.com`); // UPDATED
         
         await connectDB();
         
@@ -334,6 +377,7 @@ const startServer = async () => {
     🚀 Ruda Paints Server Started!
     ================================
     🌐 Server URL: http://localhost:${PORT}
+    🌍 Production API URL: https://api.rudapaints.com  // UPDATED
     ⏰ Port: ${PORT}
     📁 Uploads: ${uploadsDir}
     🗄️  Database: ${mongoose.connection.name || 'Not connected'}
@@ -350,6 +394,10 @@ const startServer = async () => {
     📧 Contact: /api/contact
     📰 Newsletter: /api/newsletter
     🔐 Admin: /api/admin
+    
+    🔒 CORS Allowed Origins:
+    -----------------------
+    ${allowedOrigins.map(origin => `    • ${origin}`).join('\n')}
             `);
         });
 
