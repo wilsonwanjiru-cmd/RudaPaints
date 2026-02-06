@@ -1,28 +1,48 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "rudapaints-frontend",
+  "version": "1.0.0",
   "private": true,
+  "description": "Ruda Paints - Premium Quality Paints & Coatings in Kenya",
+  "keywords": [
+    "paints",
+    "kenya",
+    "waterproofing",
+    "coatings",
+    "e-commerce",
+    "react",
+    "seo"
+  ],
+  "author": "Ruda Paints <info@rudapaints.com>",
+  "license": "MIT",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.4",
+    "lazysizes": "^5.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^7.13.0",
+    "react-helmet-async": "^1.2.0",
+    "react-image": "^4.0.3",
+    "react-lazyload": "^3.2.0",
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
+    "react-snap": "^1.23.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "build": "GENERATE_SOURCEMAP=false react-scripts build",
+    "test": "react-scripts test --watchAll=false",
+    "eject": "react-scripts eject",
+    "build:prod": "npm run build && npm run generate-sitemap && npm run generate-robots",
+    "generate-sitemap": "node scripts/generate-sitemap.js",
+    "generate-robots": "node scripts/generate-robots.js",
+    "optimize-images": "node scripts/optimize-images.js",
+    "start:prod": "serve -s build -l 3000",
+    "clean": "rm -rf build node_modules package-lock.json"
   },
   "eslintConfig": {
     "extends": [
@@ -43,7 +63,23 @@
     ]
   },
   "devDependencies": {
-    "ajv": "^8.12.0",
-    "ajv-keywords": "^5.1.0"
-  }
+    "@types/react-helmet-async": "^1.0.3",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
+    "eslint": "^8.44.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "gh-pages": "^5.0.0",
+    "prettier": "^2.8.8",
+    "serve": "^14.2.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "resolutions": {
+    "ajv": "6.12.6",
+    "ajv-keywords": "3.5.2"
+  },
+  "proxy": "http://localhost:5000"
 }

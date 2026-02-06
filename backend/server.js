@@ -5,6 +5,8 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 const { createServer } = require('http');
+const { SitemapStream, streamToPromise } = require('sitemap');
+const { createGzip } = require('zlib');
 
 dotenv.config();
 
@@ -13,14 +15,69 @@ const app = express();
 // Create necessary directories
 const uploadsDir = path.join(__dirname, 'uploads');
 const logsDir = path.join(__dirname, 'logs');
+const publicDir = path.join(__dirname, '../frontend/public');
 
 // Ensure directories exist
-[uploadsDir, logsDir].forEach(dir => {
+[uploadsDir, logsDir, publicDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
         console.log(`📁 Created directory: ${dir}`);
     }
 });
+
+// SEO Sitemap Generator
+const generateSitemap = async () => {
+  try {
+    console.log('🔧 Generating SEO sitemap...');
+    
+    const sitemap = new SitemapStream({ 
+      hostname: 'https://rudapaints.com',
+      lastmodDateOnly: true,
+      xmlns: {
+        news: false,
+        xhtml: false,
+        image: false,
+        video: false,
+        custom: [
+          'xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"',
+          'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
+        ]
+      }
+    });
+    
+    // Define your website pages for SEO
+    const pages = [
+      { url: '/', changefreq: 'daily', priority: 1.0, lastmod: new Date() },
+      { url: '/products', changefreq: 'weekly', priority: 0.9, lastmod: new Date() },
+      { url: '/price-list', changefreq: 'monthly', priority: 0.8, lastmod: new Date() },
+      { url: '/contact', changefreq: 'monthly', priority: 0.7, lastmod: new Date() },
+      // Add paint categories for better SEO
+      { url: '/products?category=Interior', changefreq: 'weekly', priority: 0.8, lastmod: new Date() },
+      { url: '/products?category=Exterior', changefreq: 'weekly', priority: 0.8, lastmod: new Date() },
+      { url: '/products?category=Primer', changefreq: 'weekly', priority: 0.7, lastmod: new Date() },
+      { url: '/products?category=Varnish', changefreq: 'weekly', priority: 0.7, lastmod: new Date() },
+      { url: '/products?category=Enamel', changefreq: 'weekly', priority: 0.7, lastmod: new Date() },
+    ];
+    
+    // Write pages to sitemap
+    pages.forEach(page => sitemap.write(page));
+    sitemap.end();
+    
+    // Generate sitemap
+    const sitemapBuffer = await streamToPromise(sitemap);
+    const gzipped = await streamToPromise(sitemap.pipe(createGzip()));
+    
+    // Save sitemap files
+    fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemapBuffer);
+    fs.writeFileSync(path.join(publicDir, 'sitemap.xml.gz'), gzipped);
+    
+    console.log('✅ SEO Sitemap generated successfully at:', path.join(publicDir, 'sitemap.xml'));
+    return true;
+  } catch (error) {
+    console.error('❌ Sitemap generation failed:', error);
+    return false;
+  }
+};
 
 // Security and performance settings
 app.set('trust proxy', 1);
@@ -86,6 +143,50 @@ app.use('/uploads', express.static(uploadsDir, {
         res.setHeader('Access-Control-Allow-Origin', '*');
     }
 }));
+
+// SEO Sitemap Route
+app.get('/sitemap.xml', (req, res) => {
+    const sitemapPath = path.join(publicDir, 'sitemap.xml.gz');
+    
+    if (fs.existsSync(sitemapPath)) {
+        res.set('Content-Type', 'application/xml');
+        res.set('Content-Encoding', 'gzip');
+        res.sendFile(sitemapPath);
+    } else {
+        // If sitemap doesn't exist, generate it
+        generateSitemap().then(() => {
+            res.redirect('/sitemap.xml');
+        }).catch(() => {
+            res.status(404).send('Sitemap not found');
+        });
+    }
+});
+
+// Robots.txt for SEO
+app.get('/robots.txt', (req, res) => {
+    const robotsPath = path.join(publicDir, 'robots.txt');
+    
+    if (!fs.existsSync(robotsPath)) {
+        // Create robots.txt if it doesn't exist
+        const robotsContent = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+
+Sitemap: https://rudapaints.com/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 10
+
+# Contact info
+Contact: rudapaints@gmail.com`;
+        
+        fs.writeFileSync(robotsPath, robotsContent);
+    }
+    
+    res.set('Content-Type', 'text/plain');
+    res.sendFile(robotsPath);
+});
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -220,7 +321,7 @@ app.get('/api/health', async (req, res) => {
             timestamp: new Date().toISOString(),
             service: 'Ruda Paints API',
             environment: process.env.NODE_ENV || 'development',
-            custom_domain: 'api.rudapaints.com', // UPDATED: Show actual API domain
+            custom_domain: 'api.rudapaints.com',
             request_origin: origin,
             database: {
                 status: dbStatusText,
@@ -234,6 +335,11 @@ app.get('/api/health', async (req, res) => {
                     heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB`,
                     rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`
                 }
+            },
+            seo: {
+                sitemap: 'https://rudapaints.com/sitemap.xml',
+                robots: 'https://rudapaints.com/robots.txt',
+                generated: new Date().toISOString()
             }
         };
 
@@ -258,8 +364,12 @@ app.get('/api/test', (req, res) => {
         message: 'Ruda Paints API is working!',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        domain: 'api.rudapaints.com', // UPDATED: Show actual API domain
-        cors_allowed: allowedOrigins
+        domain: 'api.rudapaints.com',
+        cors_allowed: allowedOrigins,
+        seo: {
+            sitemap: 'https://rudapaints.com/sitemap.xml',
+            robots: 'https://rudapaints.com/robots.txt'
+        }
     });
 });
 
@@ -270,14 +380,18 @@ app.get('/', (req, res) => {
         message: '🎨 Welcome to Ruda Paints Enterprise API',
         version: '2.0.0',
         status: 'running',
-        domain: 'api.rudapaints.com', // UPDATED: Show actual API domain
+        domain: 'api.rudapaints.com',
         endpoints: {
             health: '/api/health',
             paints: '/api/paints',
             priceList: '/api/price-list',
             contact: '/api/contact',
             newsletter: '/api/newsletter',
-            admin: '/api/admin'
+            admin: '/api/admin',
+            seo: {
+                sitemap: '/sitemap.xml',
+                robots: '/robots.txt'
+            }
         },
         documentation: 'Check /api/health for system status',
         support: {
@@ -293,7 +407,7 @@ app.get('/api/docs', (req, res) => {
     res.json({
         title: 'Ruda Paints API Documentation',
         baseUrl: `${req.protocol}://${req.get('host')}/api`,
-        productionUrl: 'https://api.rudapaints.com/api', // UPDATED: Correct API URL
+        productionUrl: 'https://api.rudapaints.com/api',
         endpoints: {
             paints: '/paints',
             priceList: '/price-list',
@@ -304,6 +418,10 @@ app.get('/api/docs', (req, res) => {
         authentication: 'Bearer token required for admin endpoints',
         cors: {
             allowed_origins: allowedOrigins
+        },
+        seo: {
+            sitemap: 'https://rudapaints.com/sitemap.xml',
+            robots_txt: 'https://rudapaints.com/robots.txt'
         }
     });
 });
@@ -322,7 +440,9 @@ app.use((req, res) => {
             'GET /api/price-list',
             'POST /api/contact',
             'POST /api/newsletter/subscribe',
-            'POST /api/admin/login'
+            'POST /api/admin/login',
+            'GET /sitemap.xml (SEO)',
+            'GET /robots.txt (SEO)'
         ]
     });
 });
@@ -367,9 +487,12 @@ const startServer = async () => {
         // Connect to database
         console.log('🔄 Starting Ruda Paints Server...');
         console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🌐 Custom API Domain: api.rudapaints.com`); // UPDATED
+        console.log(`🌐 Custom API Domain: api.rudapaints.com`);
         
         await connectDB();
+        
+        // Generate SEO sitemap on startup
+        await generateSitemap();
         
         // Start listening
         server.listen(PORT, HOST, () => {
@@ -377,7 +500,7 @@ const startServer = async () => {
     🚀 Ruda Paints Server Started!
     ================================
     🌐 Server URL: http://localhost:${PORT}
-    🌍 Production API URL: https://api.rudapaints.com  // UPDATED
+    🌍 Production API URL: https://api.rudapaints.com
     ⏰ Port: ${PORT}
     📁 Uploads: ${uploadsDir}
     🗄️  Database: ${mongoose.connection.name || 'Not connected'}
@@ -394,6 +517,11 @@ const startServer = async () => {
     📧 Contact: /api/contact
     📰 Newsletter: /api/newsletter
     🔐 Admin: /api/admin
+    
+    🔍 SEO Endpoints:
+    ----------------
+    🗺️  Sitemap: /sitemap.xml
+    🤖 Robots: /robots.txt
     
     🔒 CORS Allowed Origins:
     -----------------------

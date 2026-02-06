@@ -1,3 +1,4 @@
+// frontend/src/components/Footer.js
 import React, { useState } from 'react';
 import {
   Box,
@@ -113,7 +114,7 @@ const Footer = () => {
       // Create the data object to send
       const subscriberData = {
         email: newsletterEmail,
-        name: newsletterName || '' // Send empty string if no name
+        name: newsletterName || ''
       };
       
       console.log('Subscribing with data:', subscriberData);
@@ -334,6 +335,8 @@ const Footer = () => {
               {quickLinks.map((link, index) => (
                 <ListItem 
                   key={index} 
+                  component={Link}
+                  to={link.path}
                   sx={{ 
                     p: 0, 
                     mb: 1.5,
@@ -352,25 +355,16 @@ const Footer = () => {
                   <ListItemIcon sx={{ minWidth: 32, color: 'primary.main' }}>
                     <ArrowForward sx={{ fontSize: 16 }} />
                   </ListItemIcon>
-                  <MuiLink 
-                    component={Link} 
-                    to={link.path} 
+                  <ListItemText 
+                    primary={link.text}
                     sx={{ 
-                      textDecoration: 'none',
-                      '&:hover': { textDecoration: 'none' },
+                      '& .MuiTypography-root': {
+                        color: 'rgba(255,255,255,0.8)',
+                        fontWeight: 500,
+                        transition: 'all 0.3s',
+                      },
                     }}
-                  >
-                    <ListItemText 
-                      primary={link.text}
-                      sx={{ 
-                        '& .MuiTypography-root': {
-                          color: 'rgba(255,255,255,0.8)',
-                          fontWeight: 500,
-                          transition: 'all 0.3s',
-                        },
-                      }}
-                    />
-                  </MuiLink>
+                  />
                 </ListItem>
               ))}
             </List>
@@ -663,7 +657,7 @@ const Footer = () => {
                 component={Link}
                 to="/"
                 sx={{ 
-                  textDecoration: 'none', // Fixed typo: was 'one'
+                  textDecoration: 'none',
                   color: 'rgba(255,255,255,0.7)',
                   fontSize: '0.875rem',
                   '&:hover': { color: 'primary.light' },

@@ -1,3 +1,4 @@
+// frontend/src/pages/HomePage.js
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -21,6 +22,11 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import StarIcon from '@mui/icons-material/Star';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import SpeedIcon from '@mui/icons-material/Speed';
+import SecurityIcon from '@mui/icons-material/Security';
+import NatureIcon from '@mui/icons-material/Nature';
+import EmojiNatureIcon from '@mui/icons-material/EmojiNature';
 import { testBackendConnection, productsAPI, getImageUrl } from '../services/api';
 
 const HomePage = () => {
@@ -37,12 +43,29 @@ const HomePage = () => {
     checkApiHealth();
     fetchFeaturedPaints();
     fetchStats();
+    
+    // Set document title for SEO
+    document.title = "Ruda Paints Kenya | Premium Quality Paints & Coatings in Nairobi";
+    
+    // Add meta description for SEO
+    const metaDescription = document.createElement('meta');
+    metaDescription.name = 'description';
+    metaDescription.content = 'Ruda Paints offers high-quality interior & exterior paints, waterproofing solutions, and industrial coatings in Kenya. Best prices on premium paints with same-day delivery in Nairobi.';
+    document.head.appendChild(metaDescription);
+    
+    // Cleanup function
+    return () => {
+      document.title = 'Ruda Paints';
+      const existingMeta = document.querySelector('meta[name="description"]');
+      if (existingMeta) {
+        existingMeta.remove();
+      }
+    };
   }, []);
 
   const checkApiHealth = async () => {
     try {
       const response = await testBackendConnection();
-      // FIXED: Use the correct response structure from the updated testBackendConnection function
       setApiStatus({
         status: response.connected ? 'online' : 'offline',
         database: response.database || 'unknown',
@@ -65,7 +88,6 @@ const HomePage = () => {
       setLoading(true);
       const response = await productsAPI.getAll();
       
-      // Handle different response structures
       let paints = [];
       if (response && response.data) {
         if (Array.isArray(response.data)) {
@@ -77,7 +99,6 @@ const HomePage = () => {
         }
       }
       
-      // Get latest 4 paints as featured, or if less than 4, get all
       const featured = paints.slice(0, 4);
       setFeaturedPaints(featured);
     } catch (error) {
@@ -125,31 +146,88 @@ const HomePage = () => {
     window.open(whatsappUrl, '_blank');
   };
 
+  // Simple SEO data generation without Helmet issues
+  const generateSEOData = () => {
+    if (!featuredPaints.length) return null;
+    
+    const seoData = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Ruda Paints Kenya",
+      "url": window.location.origin,
+      "description": "Premium Quality Paints & Coatings in Kenya"
+    };
+    
+    // Add structured data to page
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(seoData);
+    document.head.appendChild(script);
+    
+    return () => {
+      const existingScript = document.querySelector('script[type="application/ld+json"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  };
+
+  // Call SEO data generation when featured paints load
+  useEffect(() => {
+    if (featuredPaints.length > 0) {
+      const cleanup = generateSEOData();
+      return cleanup;
+    }
+  }, [featuredPaints]);
+
   const features = [
     {
       icon: <BrushIcon sx={{ fontSize: 40 }} />,
       title: 'Premium Quality Paints',
-      description: 'High-quality interior and exterior paints with excellent coverage and durability.',
+      description: 'High-quality interior and exterior paints with excellent coverage and durability. VOC-free options available.',
       color: '#1976d2',
     },
     {
       icon: <LocalShippingIcon sx={{ fontSize: 40 }} />,
-      title: 'Fast Delivery',
-      description: 'Same-day delivery available in Nairobi. Reliable service across Kenya.',
+      title: 'Same-Day Delivery Nairobi',
+      description: 'Fast and reliable delivery across Kenya. Free delivery for orders over KES 10,000 in Nairobi.',
       color: '#2e7d32',
     },
     {
       icon: <SupportAgentIcon sx={{ fontSize: 40 }} />,
-      title: 'Expert Support',
-      description: 'Professional advice and customer support. WhatsApp ready for instant queries.',
+      title: '24/7 Expert Support',
+      description: 'Professional painting advice and customer support. WhatsApp consultation available.',
       color: '#ed6c02',
     },
     {
-      icon: <DownloadIcon sx={{ fontSize: 40 }} />,
-      title: 'Easy Price Lists',
-      description: 'Download updated price lists in CSV or Excel format anytime.',
-      color: '#9c27b0',
+      icon: <NatureIcon sx={{ fontSize: 40 }} />,
+      title: 'Eco-Friendly Solutions',
+      description: 'Environmentally friendly paints with low VOC content. Safe for families and pets.',
+      color: '#4caf50',
+    }
+  ];
+
+  const benefits = [
+    {
+      icon: <CheckCircleIcon color="success" />,
+      title: '10-Year Durability',
+      description: 'Our premium paints are formulated to last up to 10 years without fading or peeling.'
     },
+    {
+      icon: <SpeedIcon color="primary" />,
+      title: 'Fast Drying Time',
+      description: 'Quick-drying formulas allow for multiple coats in a single day.'
+    },
+    {
+      icon: <SecurityIcon color="info" />,
+      title: 'Weather Resistant',
+      description: 'Excellent resistance to harsh weather conditions and UV rays.'
+    },
+    {
+      icon: <EmojiNatureIcon color="success" />,
+      title: 'Non-Toxic Formula',
+      description: 'Safe for children and pets with low VOC emissions.'
+    }
   ];
 
   const statsData = [
@@ -179,7 +257,14 @@ const HomePage = () => {
     },
   ];
 
-  const categories = ['Interior', 'Exterior', 'Primer', 'Varnish', 'Enamel'];
+  const categories = [
+    { name: 'Interior Paints', description: 'For indoor walls and ceilings' },
+    { name: 'Exterior Paints', description: 'Weather-resistant outdoor paints' },
+    { name: 'Waterproofing', description: 'Waterproof coatings and sealants' },
+    { name: 'Industrial Coatings', description: 'Heavy-duty protective coatings' },
+    { name: 'Primers', description: 'Surface preparation products' },
+    { name: 'Varnishes', description: 'Wood protection and finishing' }
+  ];
 
   return (
     <Box sx={{ minHeight: '100vh' }}>
@@ -227,16 +312,6 @@ const HomePage = () => {
           mb: 6,
           position: 'relative',
           overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'url("data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z" fill="%23ffffff" fill-opacity="0.1" fill-rule="evenodd"/%3E%3C/svg%3E")',
-            opacity: 0.1,
-          },
         }}
       >
         <Container maxWidth="lg">
@@ -252,7 +327,7 @@ const HomePage = () => {
                 mb: 2,
               }}
             >
-              Welcome to Ruda Paints Enterprise
+              Premium Quality Paints & Coatings in Kenya
             </Typography>
             <Typography 
               variant="h4" 
@@ -264,7 +339,7 @@ const HomePage = () => {
                 fontSize: { xs: '1.25rem', md: '1.75rem' },
               }}
             >
-              Your Trusted Partner for Quality Paints & Professional Solutions
+              Your Trusted Partner for Professional Painting Solutions
             </Typography>
             <Typography 
               variant="body1" 
@@ -276,8 +351,8 @@ const HomePage = () => {
                 fontSize: '1.1rem',
               }}
             >
-              Discover premium quality paints for every surface. From interior elegance to exterior durability, 
-              we provide solutions that last.
+              Discover premium quality interior and exterior paints, waterproofing solutions, and industrial coatings. 
+              Serving Nairobi and across Kenya with same-day delivery available.
             </Typography>
             <Box sx={{ 
               mt: 4,
@@ -358,6 +433,27 @@ const HomePage = () => {
 
       {/* Stats Section */}
       <Container maxWidth="lg" sx={{ mb: 8 }}>
+        <Typography 
+          variant="h2" 
+          component="h2" 
+          align="center" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 800,
+            color: 'primary.main',
+            mb: 1,
+          }}
+        >
+          Trusted by Thousands in Kenya
+        </Typography>
+        <Typography 
+          variant="h6" 
+          align="center" 
+          color="text.secondary" 
+          sx={{ mb: 6, maxWidth: '700px', mx: 'auto' }}
+        >
+          Quality products and excellent service have made us the preferred paint supplier in Kenya
+        </Typography>
         <Grid container spacing={3}>
           {statsData.map((stat, index) => (
             <Grid item xs={6} md={3} key={index}>
@@ -411,7 +507,7 @@ const HomePage = () => {
             mb: 1,
           }}
         >
-          Why Choose Us
+          Why Choose Ruda Paints
         </Typography>
         <Typography 
           variant="h6" 
@@ -419,7 +515,7 @@ const HomePage = () => {
           color="text.secondary" 
           sx={{ mb: 6, maxWidth: '700px', mx: 'auto' }}
         >
-          We combine quality products with exceptional service to deliver the best painting solutions
+          We combine premium quality products with exceptional service to deliver the best painting solutions in Kenya
         </Typography>
         <Grid container spacing={4}>
           {features.map((feature, index) => (
@@ -465,6 +561,47 @@ const HomePage = () => {
         </Grid>
       </Container>
 
+      {/* Benefits Section */}
+      <Container maxWidth="lg" sx={{ mb: 8 }}>
+        <Typography 
+          variant="h2" 
+          component="h2" 
+          align="center" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 800,
+            color: 'primary.main',
+            mb: 6,
+          }}
+        >
+          Key Benefits of Our Paints
+        </Typography>
+        <Grid container spacing={3}>
+          {benefits.map((benefit, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                textAlign: 'center',
+                p: 3,
+                height: '100%',
+              }}>
+                <Box sx={{ mb: 2 }}>
+                  {benefit.icon}
+                </Box>
+                <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 600 }}>
+                  {benefit.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {benefit.description}
+                </Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
       {/* Featured Products */}
       <Container maxWidth="lg" sx={{ mb: 8 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -478,10 +615,10 @@ const HomePage = () => {
                 color: 'primary.main',
               }}
             >
-              Featured Products
+              Featured Paint Products
             </Typography>
             <Typography variant="h6" color="text.secondary">
-              Our most popular and latest paint selections
+              Best selling premium quality paints in Kenya
             </Typography>
           </Box>
           <Button
@@ -510,7 +647,6 @@ const HomePage = () => {
             sx={{ 
               mt: 2,
               borderRadius: 2,
-              '& .MuiAlert-icon': { fontSize: '2rem' },
             }}
           >
             <Typography variant="h6" gutterBottom>
@@ -543,7 +679,7 @@ const HomePage = () => {
                         component="img"
                         height="200"
                         image={getImageUrl(paint.image)}
-                        alt={paint.name}
+                        alt={paint.name || 'Paint'}
                         sx={{ 
                           objectFit: 'cover',
                           transition: 'transform 0.3s ease',
@@ -552,8 +688,7 @@ const HomePage = () => {
                           },
                         }}
                         onError={(e) => {
-                          e.target.onerror = null; // Prevent infinite loop
-                          // FIXED: Use a simple inline SVG as fallback instead of external URL
+                          e.target.onerror = null;
                           e.target.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%231976d2"/><text x="150" y="100" font-family="Arial" font-size="16" fill="white" text-anchor="middle">Ruda Paints</text></svg>`;
                         }}
                       />
@@ -669,31 +804,53 @@ const HomePage = () => {
         >
           Paint Categories
         </Typography>
-        <Grid container spacing={2} justifyContent="center">
-          {categories.map((category) => (
-            <Grid item key={category}>
-              <Button
-                variant="outlined"
-                component={Link}
-                to={`/products?category=${category}`}
+        <Grid container spacing={3} justifyContent="center">
+          {categories.map((category, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Card
                 sx={{
-                  px: 4,
-                  py: 2,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  p: 3,
                   borderRadius: 3,
-                  borderWidth: 2,
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  fontWeight: 'bold',
+                  background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                  border: '1px solid #dee2e6',
+                  transition: 'all 0.3s ease',
                   '&:hover': {
-                    borderWidth: 2,
-                    backgroundColor: 'primary.main',
-                    color: 'white',
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
                   },
-                  transition: 'all 0.3s',
                 }}
               >
-                {category} Paints
-              </Button>
+                <Typography 
+                  variant="h5" 
+                  component="h3" 
+                  gutterBottom 
+                  sx={{ 
+                    fontWeight: 700,
+                    color: 'primary.main',
+                  }}
+                >
+                  {category.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {category.description}
+                </Typography>
+                <Box sx={{ mt: 'auto', pt: 2 }}>
+                  <Button
+                    component={Link}
+                    to={`/products?category=${category.name.split(' ')[0]}`}
+                    size="small"
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    Browse Products →
+                  </Button>
+                </Box>
+              </Card>
             </Grid>
           ))}
         </Grid>
@@ -723,7 +880,7 @@ const HomePage = () => {
               textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
             }}
           >
-            Ready to Start Your Project?
+            Start Your Painting Project Today
           </Typography>
           <Typography 
             variant="h5" 
@@ -821,7 +978,7 @@ const HomePage = () => {
               fontStyle: 'italic',
             }}
           >
-            WhatsApp: 0703538670 | Email: rudapaints@gmail.com
+            WhatsApp: +254 703 538 670 | Email: info@rudapaints.com | Nairobi, Kenya
           </Typography>
         </Container>
       </Box>

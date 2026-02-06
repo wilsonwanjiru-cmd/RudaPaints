@@ -1,43 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Basic Meta Tags -->
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
+    <!-- Primary SEO Meta Tags -->
+    <title>Ruda Paints - Premium Quality Paints & Coatings in Kenya</title>
+    <meta name="description" content="Ruda Paints offers high-quality, durable paints, coatings, and waterproofing solutions for homes, offices, and industries in Kenya. Get premium paint products at affordable prices." />
+    <meta name="keywords" content="paints Kenya, house paint, waterproofing, industrial coatings, premium paint, wall paint, Ruda Paints, painting solutions, Kenya paints" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://rudapaints.com" />
+
+    <!-- Favicon and App Icons -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://rudapaints.com/" />
+    <meta property="og:title" content="Ruda Paints - Premium Quality Paints & Coatings in Kenya" />
+    <meta property="og:description" content="High-quality paints, coatings, and waterproofing solutions for residential, commercial, and industrial applications in Kenya." />
+    <meta property="og:image" content="%PUBLIC_URL%/logo512.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Ruda Paints Logo" />
+    <meta property="og:site_name" content="Ruda Paints" />
+    <meta property="og:locale" content="en_KE" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://rudapaints.com/" />
+    <meta name="twitter:title" content="Ruda Paints - Premium Quality Paints & Coatings in Kenya" />
+    <meta name="twitter:description" content="High-quality paints, coatings, and waterproofing solutions for residential, commercial, and industrial applications in Kenya." />
+    <meta name="twitter:image" content="%PUBLIC_URL%/logo512.png" />
+    <meta name="twitter:image:alt" content="Ruda Paints Logo" />
+    <meta name="twitter:creator" content="@rudapaints" />
+
+    <!-- Additional SEO Meta Tags -->
+    <meta name="author" content="Ruda Paints Kenya" />
+    <meta name="copyright" content="Copyright © 2024 Ruda Paints. All rights reserved." />
+    <meta name="language" content="English" />
+    <meta name="rating" content="General" />
+    <meta name="publisher" content="Ruda Paints" />
+    
+    <!-- Geo Tags for Local SEO -->
+    <meta name="geo.region" content="KE" />
+    <meta name="geo.placename" content="Nairobi" />
+    <meta name="geo.position" content="-1.286389;36.817223" />
+    <meta name="ICBM" content="-1.286389, 36.817223" />
+
+    <!-- Schema.org JSON-LD for Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HomeAndConstructionBusiness",
+      "name": "Ruda Paints",
+      "url": "https://rudapaints.com",
+      "logo": "https://rudapaints.com/logo512.png",
+      "description": "Premium quality paints, coatings, and waterproofing solutions in Kenya",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "",
+        "addressLocality": "Nairobi",
+        "addressRegion": "Nairobi County",
+        "postalCode": "00100",
+        "addressCountry": "KE"
+      },
+      "telephone": "+254700000000",
+      "openingHours": "Mo-Fr 08:00-17:00, Sa 08:00-13:00",
+      "priceRange": "$$",
+      "image": "https://rudapaints.com/logo512.png",
+      "sameAs": [
+        "https://www.facebook.com/rudapaints",
+        "https://www.twitter.com/rudapaints",
+        "https://www.instagram.com/rudapaints"
+      ]
+    }
+    </script>
+
+    <!-- Product Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "Premium Quality Paint",
+      "image": "https://rudapaints.com/images/premium-paint.jpg",
+      "description": "High-quality, durable paint for interior and exterior surfaces",
+      "brand": {
+        "@type": "Brand",
+        "name": "Ruda Paints"
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": "https://rudapaints.com/products",
+        "priceCurrency": "KES",
+        "price": "2500",
+        "availability": "https://schema.org/InStock",
+        "seller": {
+          "@type": "Organization",
+          "name": "Ruda Paints"
+        }
+      }
+    }
+    </script>
+
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Google Analytics (Replace G-YOUR_MEASUREMENT_ID with your actual ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YOUR_MEASUREMENT_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-YOUR_MEASUREMENT_ID');
+    </script>
+
+    <!-- Google Search Console Verification (Replace with your verification code) -->
+    <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" />
+
+    <!-- Bing Webmaster Tools -->
+    <meta name="msvalidate.01" content="YOUR_BING_VERIFICATION_CODE" />
+
+    <!-- Yandex Webmaster -->
+    <meta name="yandex-verification" content="YOUR_YANDEX_VERIFICATION_CODE" />
+
+    <!-- Baidu Verification -->
+    <meta name="baidu-site-verification" content="YOUR_BAIDU_VERIFICATION_CODE" />
+
+    <!-- CSS Preload -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" />
+    
+    <!-- Additional Performance Optimizations -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ruda Paints">
+    
+    <!-- Mobile Address Bar Color -->
+    <meta name="theme-color" content="#2c3e50" />
+    <meta name="msapplication-navbutton-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#2c3e50">
+
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <strong>We're sorry but Ruda Paints requires JavaScript to work properly. Please enable JavaScript to continue.</strong>
+      <p>Ruda Paints offers premium quality paints, coatings, and waterproofing solutions for residential, commercial, and industrial applications in Kenya.</p>
+      <p>Contact us: Email: info@rudapaints.com | Phone: +254 700 000 000</p>
+    </noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    
+    <!-- Structured Data for Breadcrumb -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://rudapaints.com/"
+      },{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Products",
+        "item": "https://rudapaints.com/products"
+      },{
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Contact",
+        "item": "https://rudapaints.com/contact"
+      },{
+        "@type": "ListItem",
+        "position": 4,
+        "name": "Price List",
+        "item": "https://rudapaints.com/price-list"
+      }]
+    }
+    </script>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    <!-- Fallback for older browsers -->
+    <script>
+      // Load polyfills for older browsers
+      if (!window.Promise || !window.fetch || !window.Symbol) {
+        document.write('<script src="https://cdn.polyfill.io/v3/polyfill.min.js?features=default%2CPromise%2Cfetch%2Ces6"><\/script>');
+      }
+    </script>
   </body>
 </html>

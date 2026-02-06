@@ -1,3 +1,4 @@
+// frontend/src/components/Navigation.js
 import React, { useState } from 'react';
 import {
   AppBar,
@@ -89,7 +90,6 @@ const Navigation = () => {
       <List sx={{ mt: 2 }}>
         {navItems.map((item) => (
           <ListItem 
-            button 
             key={item.name}
             component={Link}
             to={item.path}
@@ -115,7 +115,6 @@ const Navigation = () => {
           </ListItem>
         ))}
         <ListItem 
-          button 
           onClick={whatsappClick}
           sx={{
             py: 2,
@@ -123,6 +122,7 @@ const Navigation = () => {
             backgroundColor: '#25D366',
             '&:hover': {
               backgroundColor: '#128C7E',
+              cursor: 'pointer'
             }
           }}
         >
@@ -278,7 +278,7 @@ const Navigation = () => {
         open={mobileOpen}
         onClose={handleDrawerToggle}
         ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
+          keepMounted: true,
         }}
         sx={{
           display: { xs: 'block', md: 'none' },
