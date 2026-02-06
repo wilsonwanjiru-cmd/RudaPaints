@@ -42,13 +42,15 @@ const HomePage = () => {
   const checkApiHealth = async () => {
     try {
       const response = await testBackendConnection();
+      // FIXED: Use the correct response structure from the updated testBackendConnection function
       setApiStatus({
-        status: 'online',
-        database: response.data?.database || response.database || 'unknown',
-        message: 'API is connected and working',
-        uptime: response.data?.uptime || response.uptime || 0,
+        status: response.connected ? 'online' : 'offline',
+        database: response.database || 'unknown',
+        message: response.message || 'API is connected and working',
+        uptime: response.uptime || 0,
       });
     } catch (error) {
+      console.error('Error checking API health:', error);
       setApiStatus({
         status: 'offline',
         database: 'disconnected',
@@ -550,8 +552,9 @@ const HomePage = () => {
                           },
                         }}
                         onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://via.placeholder.com/300x200/1976d2/ffffff?text=Ruda+Paints';
+                          e.target.onerror = null; // Prevent infinite loop
+                          // FIXED: Use a simple inline SVG as fallback instead of external URL
+                          e.target.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%231976d2"/><text x="150" y="100" font-family="Arial" font-size="16" fill="white" text-anchor="middle">Ruda Paints</text></svg>`;
                         }}
                       />
                       <Box sx={{

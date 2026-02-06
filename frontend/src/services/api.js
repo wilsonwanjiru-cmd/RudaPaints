@@ -112,14 +112,17 @@ API.interceptors.response.use(
 );
 
 // ============================================
-// 5. BACKEND CONNECTION TEST
+// 5. BACKEND CONNECTION TEST - FIXED
 // ============================================
 export const testBackendConnection = async () => {
+  // Get the correct base URL dynamically
   const baseURL = getBaseURL();
-  const healthURL = baseURL.replace('/api', '') + '/health';
+  
+  // The health endpoint is at /api/health (baseURL already ends with /api)
+  const healthURL = `${baseURL}/health`;
   
   try {
-    console.log(`🔗 Testing backend: ${healthURL}`);
+    console.log(`🔗 Testing backend connection at: ${healthURL}`);
     const response = await fetch(healthURL, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
@@ -128,6 +131,8 @@ export const testBackendConnection = async () => {
     
     if (response.ok) {
       const data = await response.json();
+      console.log(`✅ Backend connection successful:`, data);
+      
       return {
         connected: true,
         database: data.database?.status || 'connected',
@@ -136,14 +141,15 @@ export const testBackendConnection = async () => {
         url: baseURL
       };
     } else {
-      throw new Error(`Status: ${response.status}`);
+      throw new Error(`Health check failed with status: ${response.status}`);
     }
   } catch (error) {
-    console.error('❌ Backend test failed:', error.message);
+    console.error('❌ Backend connection test failed:', error.message);
+    
     return {
       connected: false,
       database: 'unknown',
-      message: `Cannot connect: ${error.message}`,
+      message: `Cannot connect to backend: ${error.message}`,
       url: baseURL
     };
   }
