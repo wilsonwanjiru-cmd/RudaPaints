@@ -1,21 +1,23 @@
 // frontend/src/App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Container, Box, LinearProgress, Alert, Typography, Button } from '@mui/material';
+import { HelmetProvider } from 'react-helmet-async';
 
 // Components
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
+import SEO from './components/SEO'; // Import SEO component
 
-// Pages
-import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
-import PriceListPage from './pages/PriceListPage';
-import ContactPage from './pages/ContactPage';
-import AdminLogin from './pages/AdminLogin';
-import AdminProductsPage from './pages/AdminProductsPage';
+// Lazy load pages for better performance
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ProductsPage = lazy(() => import('./pages/ProductsPage'));
+const PriceListPage = lazy(() => import('./pages/PriceListPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminProductsPage = lazy(() => import('./pages/AdminProductsPage'));
 
 const theme = createTheme({
   palette: {
@@ -214,6 +216,16 @@ const theme = createTheme({
         },
       },
     },
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          textDecoration: 'none',
+          '&:hover': {
+            textDecoration: 'underline',
+          },
+        },
+      },
+    },
   },
 });
 
@@ -315,6 +327,9 @@ const LayoutWrapper = ({ children }) => {
   
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {/* SEO Component for all pages */}
+      <SEO />
+      
       {/* Don't show navigation on admin routes */}
       {!isAdminRoute && <Navigation />}
       
@@ -387,83 +402,87 @@ function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <ErrorBoundary>
-        <Router>
-          <LayoutWrapper>
-            <Container 
-              maxWidth="xl" 
-              sx={{ 
-                py: { xs: 3, sm: 4, md: 5 },
-                px: { xs: 2, sm: 3, md: 4 },
-              }}
-            >
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/price-list" element={<PriceListPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                
-                {/* Admin Routes */}
-                <Route 
-                  path="/admin" 
-                  element={
-                    isAdmin ? (
-                      <Navigate to="/admin/products" />
-                    ) : (
-                      <AdminLogin onLogin={handleAdminLogin} />
-                    )
-                  } 
-                />
-                <Route 
-                  path="/admin/products" 
-                  element={
-                    <PrivateRoute>
-                      <AdminProductsPage />
-                    </PrivateRoute>
-                  } 
-                />
-                
-                {/* 404 Page */}
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </Container>
-            
-            {/* Scroll to Top Button */}
-            <Box
-              sx={{
-                position: 'fixed',
-                bottom: 24,
-                right: 24,
-                zIndex: 1000,
-                display: { xs: 'none', md: 'flex' },
-              }}
-            >
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                sx={{
-                  borderRadius: '50%',
-                  minWidth: 48,
-                  minHeight: 48,
-                  boxShadow: 4,
-                  '&:hover': {
-                    boxShadow: 6,
-                    transform: 'translateY(-2px)',
-                  },
+    <HelmetProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <ErrorBoundary>
+          <Router>
+            <LayoutWrapper>
+              <Container 
+                maxWidth="xl" 
+                sx={{ 
+                  py: { xs: 3, sm: 4, md: 5 },
+                  px: { xs: 2, sm: 3, md: 4 },
                 }}
-                aria-label="Scroll to top"
               >
-                ↑
-              </Button>
-            </Box>
-          </LayoutWrapper>
-        </Router>
-      </ErrorBoundary>
-    </ThemeProvider>
+                <Suspense fallback={<LoadingFallback />}>
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/price-list" element={<PriceListPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    
+                    {/* Admin Routes */}
+                    <Route 
+                      path="/admin" 
+                      element={
+                        isAdmin ? (
+                          <Navigate to="/admin/products" />
+                        ) : (
+                          <AdminLogin onLogin={handleAdminLogin} />
+                        )
+                      } 
+                    />
+                    <Route 
+                      path="/admin/products" 
+                      element={
+                        <PrivateRoute>
+                          <AdminProductsPage />
+                        </PrivateRoute>
+                      } 
+                    />
+                    
+                    {/* 404 Page */}
+                    <Route path="*" element={<NotFoundPage />} />
+                  </Routes>
+                </Suspense>
+              </Container>
+              
+              {/* Scroll to Top Button */}
+              <Box
+                sx={{
+                  position: 'fixed',
+                  bottom: 24,
+                  right: 24,
+                  zIndex: 1000,
+                  display: { xs: 'none', md: 'flex' },
+                }}
+              >
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  sx={{
+                    borderRadius: '50%',
+                    minWidth: 48,
+                    minHeight: 48,
+                    boxShadow: 4,
+                    '&:hover': {
+                      boxShadow: 6,
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                  aria-label="Scroll to top"
+                >
+                  ↑
+                </Button>
+              </Box>
+            </LayoutWrapper>
+          </Router>
+        </ErrorBoundary>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 }
 

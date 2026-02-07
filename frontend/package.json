@@ -1,8 +1,8 @@
 {
   "name": "rudapaints-frontend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Ruda Paints - Premium Quality Paints & Coatings in Kenya",
+  "description": "Ruda Paints Enterprise - Premium Quality Paints & Coatings in Kenya",
   "keywords": [
     "paints",
     "kenya",
@@ -10,10 +10,20 @@
     "coatings",
     "e-commerce",
     "react",
-    "seo"
+    "seo",
+    "google-analytics",
+    "search-console"
   ],
-  "author": "Ruda Paints <info@rudapaints.com>",
+  "author": "Ruda Paints Enterprise <rudapaints@gmail.com>",
   "license": "MIT",
+  "homepage": "https://rudapaints.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rudapaints/rudapaints-frontend"
+  },
+  "bugs": {
+    "url": "https://github.com/rudapaints/rudapaints-frontend/issues"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -30,31 +40,44 @@
     "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
     "react-snap": "^1.23.0",
+    "sitemap": "^9.0.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "npm run generate-seo-files && GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject",
-    "build:prod": "npm run build && npm run generate-sitemap && npm run generate-robots",
+    "build:prod": "npm run generate-seo-files && GENERATE_SOURCEMAP=false react-scripts build",
+    "generate-seo-files": "node scripts/generate-sitemap.js && node scripts/generate-robots.js && node scripts/generate-verification.js",
     "generate-sitemap": "node scripts/generate-sitemap.js",
     "generate-robots": "node scripts/generate-robots.js",
+    "generate-verification": "node scripts/generate-verification.js",
     "optimize-images": "node scripts/optimize-images.js",
     "start:prod": "serve -s build -l 3000",
-    "clean": "rm -rf build node_modules package-lock.json"
+    "clean": "rm -rf build node_modules package-lock.json",
+    "predeploy": "npm run generate-seo-files",
+    "deploy": "npm run build && echo 'Deploy to Render via Git push'",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "format": "prettier --write src/**/*.js"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "no-unused-vars": "warn",
+      "no-console": "warn"
+    }
   },
   "browserslist": {
     "production": [
       ">0.2%",
       "not dead",
-      "not op_mini all"
+      "not op_mini all",
+      "not IE 11"
     ],
     "development": [
       "last 1 chrome version",
