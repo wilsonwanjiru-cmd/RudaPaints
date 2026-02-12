@@ -1,12 +1,70 @@
+# Ruda Paints - Robots.txt
+# Generated: 2026-02-07T21:17:47.027Z
+
+# Allow all search engines
 User-agent: *
 Allow: /
+
+# Disallow admin panel from search engines
 Disallow: /admin
 Disallow: /api
+Disallow: /private
 
+# Allow search engines for these paths
+Allow: /products
+Allow: /price-list
+Allow: /contact
+
+# Sitemaps
 Sitemap: https://rudapaints.com/sitemap.xml
+Sitemap: https://rudapaints.com/sitemap-index.xml
 
-# Crawl delay
+# Crawl delay (in seconds)
+Crawl-delay: 5
+
+# Google-specific instructions
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Crawl-delay: 2
+
+# Google AdsBot
+User-agent: AdsBot-Google
+Allow: /
+
+# Google Images
+User-agent: Googlebot-Image
+Allow: /
+Disallow: /admin
+Disallow: /uploads/private
+
+# Bing
+User-agent: bingbot
+Allow: /
+Disallow: /admin
+Crawl-delay: 3
+
+# Yandex
+User-agent: Yandex
+Allow: /
+Disallow: /admin
+Clean-param: ref /products/
+
+# Baidu
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin
 Crawl-delay: 10
 
-# Contact info
-Contact: rudapaints@gmail.com
+# Performance considerations
+# Wait at least 1 second between requests
+Request-rate: 1/1
+
+# Visit time (based on Nairobi timezone GMT+3)
+Visit-time: 0200 0600
+
+# Host directive (primary domain)
+Host: rudapaints.com
+
+# Welcome message for crawlers
+# Contact for crawler issues: webmaster@rudapaints.com

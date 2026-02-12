@@ -694,7 +694,7 @@ const Footer = () => {
               fontSize: '0.75rem',
             }}
           >
-            Website developed with ❤️ by Ruda Paints Enterprise | Powered by MERN Stack Technology
+            Website developed with ❤️ by Wilson Muita Wanjiru | Powered by MERN Stack Technology
           </Typography>
           <Typography 
             variant="caption" 
