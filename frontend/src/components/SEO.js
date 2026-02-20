@@ -111,10 +111,10 @@ const SEO = ({
           "image": "https://api.rudapaints.com/uploads/banner.jpg",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Nairobi",
-            "addressLocality": "Nairobi",
-            "addressRegion": "Nairobi",
-            "addressCountry": "KE"
+            "streetAddress": "P.O Box 300-00232",
+            "addressLocality": "Ruiru",
+            "addressRegion": "Ruiru",
+            "addressCountry": "Kenya"
           },
           "geo": {
             "@type": "GeoCoordinates",

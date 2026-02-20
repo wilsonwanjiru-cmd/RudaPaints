@@ -978,7 +978,7 @@ const HomePage = () => {
               fontStyle: 'italic',
             }}
           >
-            WhatsApp: +254 703 538 670 | Email: info@rudapaints.com | Nairobi, Kenya
+            WhatsApp: +254 703 538 670 | Email: rudapaints@mail.com | P.O Box 300-00232 Ruiru, Kenya
           </Typography>
         </Container>
       </Box>

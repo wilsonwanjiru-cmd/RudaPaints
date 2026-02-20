@@ -46,7 +46,7 @@ const Footer = () => {
   const whatsappNumber = process.env.REACT_APP_WHATSAPP_NUMBER || '254703538670';
   const email = process.env.REACT_APP_EMAIL || 'rudapaints@gmail.com';
   const companyName = process.env.REACT_APP_COMPANY_NAME || 'Ruda Paints Enterprise';
-  const companyAddress = process.env.REACT_APP_COMPANY_ADDRESS || 'Nairobi, Kenya';
+  const companyAddress = process.env.REACT_APP_COMPANY_ADDRESS || 'P.O Box 300-00232 Ruiru, Kenya';
   
   // Newsletter state
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -706,7 +706,7 @@ const Footer = () => {
               mt: 0.5,
             }}
           >
-            Domain: rudapaintsenterprise.com | Email: {email} | Phone: +254 703 538 670
+            Domain: rudapaints.com | Email: rudapaints@gmail.com | Phone: +254 703 538 670 | P.O Box 300-00232 Ruiru,Kenya
           </Typography>
         </Box>
       </Container>

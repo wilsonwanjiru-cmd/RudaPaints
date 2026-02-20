@@ -548,14 +548,14 @@ const ContactPage = () => {
                   backgroundColor: alpha(theme.palette.primary.main, 0.2),
                 }
               }}
-              onClick={() => window.open('https://maps.google.com/?q=Nairobi+Kenya', '_blank')}
+              onClick={() => window.open('https://maps.google.com/?q=Nairobi+Kenya,Outering Road', '_blank')}
             >
               <LocationOnIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
               <Typography variant="h6" color="primary.main">
                 View on Google Maps
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Nairobi, Kenya
+                P.O Box 300-00232 Ruiru,Kenya
               </Typography>
             </Box>
             
