@@ -89,28 +89,26 @@ const paintSchema = new mongoose.Schema({
         uppercase: true
     }
 }, {
-    timestamps: true,
-    suppressReservedKeysWarning: true // Suppress the isNew warning
+    timestamps: true
+    // Removed invalid option: suppressReservedKeysWarning
 });
 
-// Generate SKU before saving if not provided
-paintSchema.pre('save', function(next) {
+// Generate SKU before saving if not provided – using async function (no next callback)
+paintSchema.pre('save', async function() {
     if (!this.sku) {
         const prefix = this.brand.substring(0, 3).toUpperCase();
         const categoryPrefix = this.category.substring(0, 2).toUpperCase();
         const randomNum = Math.floor(1000 + Math.random() * 9000);
         this.sku = `${prefix}-${categoryPrefix}-${randomNum}`;
     }
-    next();
 });
 
-// Index for faster queries - REMOVED duplicate sku index
+// Index for faster queries
 paintSchema.index({ name: 'text', brand: 'text', description: 'text' });
 paintSchema.index({ category: 1, price: 1 });
 paintSchema.index({ featured: 1, createdAt: -1 });
 paintSchema.index({ available: 1 });
 paintSchema.index({ newArrival: 1 });
-// Removed: paintSchema.index({ sku: 1 }, { unique: true, sparse: true });
 
 // Virtual for discount percentage
 paintSchema.virtual('discountPercentage').get(function() {
@@ -151,7 +149,7 @@ paintSchema.methods.getStatus = function() {
     if (!this.available) return 'out-of-stock';
     if (this.isOnSale()) return 'on-sale';
     if (this.featured) return 'featured';
-    if (this.newArrival) return 'new'; // Changed from isNew to newArrival
+    if (this.newArrival) return 'new';
     return 'available';
 };
 
@@ -214,7 +212,7 @@ paintSchema.statics.getFeaturedProducts = function(limit = 8) {
 // Static method to get new arrivals
 paintSchema.statics.getNewArrivals = function(limit = 8) {
     return this.find({ 
-        newArrival: true, // Changed from isNew to newArrival
+        newArrival: true,
         available: true 
     })
     .sort({ createdAt: -1 })
@@ -270,7 +268,7 @@ paintSchema.statics.getStatistics = async function() {
     const totalProducts = await this.countDocuments();
     const availableProducts = await this.countDocuments({ available: true });
     const featuredProducts = await this.countDocuments({ featured: true });
-    const newProducts = await this.countDocuments({ newArrival: true }); // Changed from isNew to newArrival
+    const newProducts = await this.countDocuments({ newArrival: true });
     
     const priceStats = await this.aggregate([
         {
