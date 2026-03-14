@@ -34,7 +34,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
-import { productsAPI } from '../services/api';
+import { productsAPI, getImageUrl } from '../services/api'; // 👈 import getImageUrl
 
 const ProductsPage = () => {
   const [paints, setPaints] = useState([]);
@@ -373,7 +373,7 @@ const ProductsPage = () => {
                   {paint.image ? (
                     <CardMedia
                       component="img"
-                      image={`http://localhost:5000${paint.image}`}
+                      image={getImageUrl(paint.image)} // 👈 FIXED: use helper
                       alt={paint.name}
                       sx={{ 
                         objectFit: 'contain',
