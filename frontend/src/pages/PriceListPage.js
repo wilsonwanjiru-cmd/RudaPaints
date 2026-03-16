@@ -52,9 +52,16 @@ const PriceListPage = () => {
       setDownloadLoading(true);
       const response = await priceListAPI.download(format);
       
-      const filename = format === 'excel' 
-        ? `ruda-paints-price-list-${new Date().toISOString().split('T')[0]}.xlsx`
-        : `ruda-paints-price-list-${new Date().toISOString().split('T')[0]}.csv`;
+      // Generate filename based on format
+      const dateStr = new Date().toISOString().split('T')[0];
+      let filename;
+      if (format === 'excel') {
+        filename = `ruda-paints-price-list-${dateStr}.xlsx`;
+      } else if (format === 'pdf') {
+        filename = `ruda-paints-price-list-${dateStr}.pdf`;
+      } else {
+        filename = `ruda-paints-price-list-${dateStr}.csv`;
+      }
       
       downloadFile(response.data, filename);
     } catch (err) {
@@ -140,12 +147,22 @@ const PriceListPage = () => {
             >
               {downloadLoading ? 'Downloading...' : 'Excel'}
             </Button>
+            {/* NEW PDF BUTTON */}
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<PictureAsPdfIcon />}
+              onClick={() => handleDownload('pdf')}
+              disabled={downloadLoading}
+            >
+              {downloadLoading ? 'Generating PDF...' : 'PDF'}
+            </Button>
           </Box>
         </Box>
       </Box>
 
       {viewMode === 'grid' ? (
-        // Grid View
+        // Grid View (unchanged)
         Object.entries(priceData.paints).map(([category, categoryPaints]) => (
           <Box key={category} sx={{ mb: 6 }}>
             <Typography variant="h5" component="h2" gutterBottom sx={{ 
@@ -201,7 +218,7 @@ const PriceListPage = () => {
           </Box>
         ))
       ) : (
-        // Table View
+        // Table View (unchanged)
         <TableContainer component={Paper} sx={{ mt: 2 }}>
           <Table>
             <TableHead>
@@ -245,7 +262,7 @@ const PriceListPage = () => {
         </TableContainer>
       )}
 
-      {/* Summary */}
+      {/* Summary (unchanged) */}
       <Box sx={{ 
         mt: 4, 
         p: 3, 

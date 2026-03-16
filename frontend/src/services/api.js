@@ -4,21 +4,17 @@ import axios from 'axios';
 // 1. SIMPLIFIED API CONFIGURATION
 // ============================================
 const getBaseURL = () => {
-  // Priority 1: Explicit environment variable (overrides everything)
   if (process.env.REACT_APP_API_URL) {
     console.log(`⚙️ Using explicit API URL from env: ${process.env.REACT_APP_API_URL}`);
     return process.env.REACT_APP_API_URL;
   }
 
-  // Priority 2: Production with custom API domain
   if (process.env.NODE_ENV === 'production') {
-    // Use your custom API subdomain
     const productionURL = 'https://api.rudapaints.com/api';
     console.log(`🌍 Production: Using custom API domain: ${productionURL}`);
     return productionURL;
   }
 
-  // Priority 3: Default development (localhost)
   const devURL = 'http://localhost:5000/api';
   console.log(`💻 Development: Using local API: ${devURL}`);
   return devURL;
@@ -46,7 +42,6 @@ API.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Clean logs only in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`📨 API ${config.method?.toUpperCase()}: ${config.baseURL}${config.url}`);
     }
@@ -71,7 +66,6 @@ API.interceptors.response.use(
   (error) => {
     const errorMessage = error.message || 'Unknown error occurred';
     
-    // User-friendly messages
     let userMessage = 'An error occurred. Please try again later.';
     
     if (error.code === 'ECONNABORTED') {
@@ -93,7 +87,6 @@ API.interceptors.response.use(
       }
     }
     
-    // Console error only in development
     if (process.env.NODE_ENV === 'development') {
       console.error(`❌ API Error:`, {
         message: errorMessage,
@@ -112,13 +105,10 @@ API.interceptors.response.use(
 );
 
 // ============================================
-// 5. BACKEND CONNECTION TEST - FIXED
+// 5. BACKEND CONNECTION TEST
 // ============================================
 export const testBackendConnection = async () => {
-  // Get the correct base URL dynamically
   const baseURL = getBaseURL();
-  
-  // The health endpoint is at /api/health (baseURL already ends with /api)
   const healthURL = `${baseURL}/health`;
   
   try {
@@ -186,12 +176,16 @@ export const productsAPI = {
   getStats: () => API.get('/paints/stats')
 };
 
-// Price List API
+// Price List API - UPDATED download method
 export const priceListAPI = {
   get: (params = {}) => API.get('/price-list', { params }),
-  download: (format = 'csv') => API.get(`/price-list/download?format=${format}`, {
-    responseType: 'blob'
-  }),
+  download: (format = 'csv') => {
+    // For PDF, use the dedicated endpoint without query string
+    const url = format === 'pdf' 
+      ? '/price-list/download/pdf' 
+      : `/price-list/download?format=${format}`;
+    return API.get(url, { responseType: 'blob' });
+  },
   getStats: () => API.get('/price-list/stats')
 };
 
@@ -244,26 +238,22 @@ export const adminAPI = {
 };
 
 // ============================================
-// 7. UTILITY FUNCTIONS (UPDATED)
+// 7. UTILITY FUNCTIONS
 // ============================================
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   
-  // If already a full URL, return as-is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
   
-  // Determine base URL for images
   let baseURL;
   if (process.env.NODE_ENV === 'production') {
-    // In production, images are served from your API domain
-    baseURL = 'https://api.rudapaints.com'; // UPDATED: Use API domain, not frontend
+    baseURL = 'https://api.rudapaints.com';
   } else {
-    baseURL = 'http://localhost:5000'; // Backend in development
+    baseURL = 'http://localhost:5000';
   }
   
-  // Ensure imagePath starts with /
   const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   return `${baseURL}${cleanPath}`;
 };
