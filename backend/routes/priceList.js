@@ -3,7 +3,7 @@ const router = express.Router();
 const Paint = require('../models/Paint');
 const XLSX = require('xlsx');
 const { Parser } = require('json2csv');
-const PDFDocument = require('pdfkit'); // <-- NEW
+const PDFDocument = require('pdfkit');
 
 // Generate and download price list (CSV or Excel)
 router.get('/download', async (req, res) => {
@@ -58,15 +58,19 @@ router.get('/download', async (req, res) => {
     }
 });
 
-// NEW: Generate and download price list as PDF
+// IMPROVED: Generate and download price list as PDF with proper table formatting
 router.get('/download/pdf', async (req, res) => {
     try {
         const paints = await Paint.find({ available: true })
             .select('name category brand size price description')
             .sort({ category: 1, name: 1 });
 
-        // Create PDF document
-        const doc = new PDFDocument({ margin: 30, size: 'A4' });
+        // Create PDF document with multi‑page support
+        const doc = new PDFDocument({ 
+            margin: 30, 
+            size: 'A4',
+            bufferPages: true
+        });
 
         // Set response headers
         res.setHeader('Content-Type', 'application/pdf');
@@ -75,11 +79,47 @@ router.get('/download/pdf', async (req, res) => {
         // Pipe PDF to response
         doc.pipe(res);
 
+        // Helper function to draw a table row (header or data)
+        const drawRow = (y, columns, isHeader = false) => {
+            const startX = 50;
+            const colWidths = [100, 220, 60, 80]; // Product, Description, Size, Price
+            let x = startX;
+
+            if (isHeader) {
+                doc.fillColor('#2c3e50').font('Helvetica-Bold').fontSize(10);
+            } else {
+                doc.fillColor('black').font('Helvetica').fontSize(9);
+            }
+
+            // Draw cell backgrounds for header
+            if (isHeader) {
+                doc.fillColor('#ecf0f1').rect(startX, y-3, 460, 18).fill();
+                doc.fillColor('black');
+            }
+
+            // Draw each cell
+            columns.forEach((text, i) => {
+                doc.fillColor(isHeader ? '#2c3e50' : 'black');
+                doc.text(text, x + 2, y, { 
+                    width: colWidths[i] - 4, 
+                    align: i === 3 ? 'right' : 'left',
+                    lineBreak: i === 1 // Only wrap description column
+                });
+                x += colWidths[i];
+            });
+
+            // Draw horizontal line
+            doc.strokeColor('#bdc3c7').lineWidth(0.5)
+               .moveTo(startX, y + 15)
+               .lineTo(startX + 460, y + 15)
+               .stroke();
+        };
+
         // Add title
-        doc.fontSize(20).text('Ruda Paints - Price List', { align: 'center' });
+        doc.fontSize(20).fillColor('#2980b9').text('Ruda Paints - Price List', { align: 'center' });
         doc.moveDown();
-        doc.fontSize(10).text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'right' });
-        doc.moveDown();
+        doc.fontSize(10).fillColor('#7f8c8d').text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'right' });
+        doc.moveDown(2);
 
         // Group paints by category
         const groupedPaints = paints.reduce((acc, paint) => {
@@ -88,36 +128,63 @@ router.get('/download/pdf', async (req, res) => {
             return acc;
         }, {});
 
-        // Table settings
-        const startY = doc.y;
-        const col1 = 50;   // Product
-        const col2 = 150;  // Description
-        const col3 = 300;  // Size
-        const col4 = 400;  // Price
+        let y = doc.y;
 
         Object.entries(groupedPaints).forEach(([category, categoryPaints]) => {
             // Category header
-            doc.fontSize(14).fillColor('blue').text(category, { underline: true });
-            doc.moveDown(0.5);
-            
+            doc.fillColor('#2980b9').fontSize(14).font('Helvetica-Bold')
+               .text(category, 50, y, { underline: true });
+            y = doc.y + 10;
+
             // Table headers
-            doc.fontSize(10).fillColor('black');
-            doc.text('Product', col1, doc.y, { width: 90, continued: true });
-            doc.text('Description', col2, doc.y, { width: 140, continued: true });
-            doc.text('Size', col3, doc.y, { width: 70, continued: true });
-            doc.text('Price (KES)', col4, doc.y);
-            doc.moveDown();
+            drawRow(y, ['Product', 'Description', 'Size', 'Price (KES)'], true);
+            y += 20;
 
             // Table rows
             categoryPaints.forEach(paint => {
-                doc.fontSize(9);
-                doc.text(paint.name.substring(0, 15), col1, doc.y, { width: 90, continued: true });
-                doc.text(paint.description ? paint.description.substring(0, 25) : '-', col2, doc.y, { width: 140, continued: true });
-                doc.text(paint.size, col3, doc.y, { width: 70, continued: true });
-                doc.text(paint.price.toLocaleString(), col4, doc.y);
-                doc.moveDown(0.5);
+                // Check if we need a new page
+                if (y > 700) {
+                    doc.addPage();
+                    y = 50;
+                    // Redraw headers on new page
+                    drawRow(y, ['Product', 'Description', 'Size', 'Price (KES)'], true);
+                    y += 20;
+                }
+
+                // Calculate description height to know row height
+                const descLines = doc.heightOfString(paint.description || '-', { width: 216, align: 'left' });
+                const rowHeight = Math.max(18, descLines + 4); // Minimum 18, expand for wrapped text
+
+                // Draw row background (alternating)
+                doc.fillColor('#f9f9f9')
+                   .rect(50, y - 3, 460, rowHeight)
+                   .fill();
+
+                // Draw product name (full)
+                doc.fillColor('black').font('Helvetica').fontSize(9)
+                   .text(paint.name, 52, y, { width: 96, align: 'left' });
+
+                // Draw description (wrapped)
+                doc.text(paint.description || '-', 152, y, { width: 216, align: 'left' });
+
+                // Draw size
+                doc.text(paint.size, 372, y, { width: 56, align: 'left' });
+
+                // Draw price
+                doc.text(paint.price.toLocaleString(), 432, y, { width: 76, align: 'right' });
+
+                // Draw cell borders
+                doc.strokeColor('#bdc3c7').lineWidth(0.2);
+                let x = 50;
+                [100, 220, 60, 80].forEach(width => {
+                    doc.rect(x, y - 3, width, rowHeight).stroke();
+                    x += width;
+                });
+
+                y += rowHeight;
             });
-            doc.moveDown();
+
+            y += 10; // Space after category
         });
 
         // Finalize PDF
