@@ -25,7 +25,17 @@ const paintSchema = new mongoose.Schema({
     size: {
         type: String,
         required: [true, 'Size is required'],
-        enum: ['1L', '4L', '5L', '10L', '20L', '25L', 'Other'],
+        enum: {
+            values: [
+                // Liters
+                '1L', '4L', '5L', '10L', '20L', '25L',
+                // Kilograms
+                '1kg', '5kg', '25kg', '30kg',
+                // Other (for custom sizes)
+                'Other'
+            ],
+            message: '{VALUE} is not a valid size. Use L or kg units.'
+        },
         default: '4L'
     },
     price: {
@@ -61,7 +71,7 @@ const paintSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    newArrival: {  // Changed from isNew to newArrival to avoid reserved keyword
+    newArrival: {
         type: Boolean,
         default: false
     },
@@ -90,10 +100,9 @@ const paintSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
-    // Removed invalid option: suppressReservedKeysWarning
 });
 
-// Generate SKU before saving if not provided – using async function (no next callback)
+// Generate SKU before saving if not provided
 paintSchema.pre('save', async function() {
     if (!this.sku) {
         const prefix = this.brand.substring(0, 3).toUpperCase();
@@ -103,14 +112,14 @@ paintSchema.pre('save', async function() {
     }
 });
 
-// Index for faster queries
+// Indexes for faster queries (unchanged)
 paintSchema.index({ name: 'text', brand: 'text', description: 'text' });
 paintSchema.index({ category: 1, price: 1 });
 paintSchema.index({ featured: 1, createdAt: -1 });
 paintSchema.index({ available: 1 });
 paintSchema.index({ newArrival: 1 });
 
-// Virtual for discount percentage
+// Virtuals and methods (unchanged)
 paintSchema.virtual('discountPercentage').get(function() {
     if (this.originalPrice && this.originalPrice > this.price) {
         return Math.round(((this.originalPrice - this.price) / this.originalPrice) * 100);
@@ -118,7 +127,6 @@ paintSchema.virtual('discountPercentage').get(function() {
     return 0;
 });
 
-// Virtual for formatted price
 paintSchema.virtual('formattedPrice').get(function() {
     return new Intl.NumberFormat('en-KE', {
         style: 'currency',
@@ -128,7 +136,6 @@ paintSchema.virtual('formattedPrice').get(function() {
     }).format(this.price);
 });
 
-// Virtual for formatted original price
 paintSchema.virtual('formattedOriginalPrice').get(function() {
     if (!this.originalPrice) return null;
     return new Intl.NumberFormat('en-KE', {
@@ -139,12 +146,10 @@ paintSchema.virtual('formattedOriginalPrice').get(function() {
     }).format(this.originalPrice);
 });
 
-// Method to check if product is on sale
 paintSchema.methods.isOnSale = function() {
     return this.originalPrice && this.originalPrice > this.price;
 };
 
-// Method to get product status
 paintSchema.methods.getStatus = function() {
     if (!this.available) return 'out-of-stock';
     if (this.isOnSale()) return 'on-sale';
@@ -153,34 +158,25 @@ paintSchema.methods.getStatus = function() {
     return 'available';
 };
 
-// Method to reduce stock
 paintSchema.methods.reduceStock = function(quantity) {
     if (this.stockQuantity < quantity) {
         throw new Error('Insufficient stock');
     }
     this.stockQuantity -= quantity;
-    
-    // If stock reaches 0, mark as unavailable
     if (this.stockQuantity === 0) {
         this.available = false;
     }
-    
     return this;
 };
 
-// Method to add stock
 paintSchema.methods.addStock = function(quantity) {
     this.stockQuantity += quantity;
-    
-    // If stock was 0 and we're adding stock, mark as available
     if (!this.available && this.stockQuantity > 0) {
         this.available = true;
     }
-    
     return this;
 };
 
-// Method to update rating
 paintSchema.methods.updateRating = function(newRating) {
     const totalRating = (this.rating * this.reviewCount) + newRating;
     this.reviewCount += 1;
@@ -188,18 +184,15 @@ paintSchema.methods.updateRating = function(newRating) {
     return this;
 };
 
-// Static method to find by category with pagination
 paintSchema.statics.findByCategory = function(category, options = {}) {
     const { page = 1, limit = 10, sort = { createdAt: -1 } } = options;
     const skip = (page - 1) * limit;
-    
     return this.find({ category })
         .sort(sort)
         .skip(skip)
         .limit(limit);
 };
 
-// Static method to get featured products
 paintSchema.statics.getFeaturedProducts = function(limit = 8) {
     return this.find({ 
         featured: true, 
@@ -209,7 +202,6 @@ paintSchema.statics.getFeaturedProducts = function(limit = 8) {
     .limit(limit);
 };
 
-// Static method to get new arrivals
 paintSchema.statics.getNewArrivals = function(limit = 8) {
     return this.find({ 
         newArrival: true,
@@ -219,10 +211,8 @@ paintSchema.statics.getNewArrivals = function(limit = 8) {
     .limit(limit);
 };
 
-// Static method to search products
 paintSchema.statics.searchProducts = function(searchTerm, options = {}) {
     const { category, minPrice, maxPrice, available = true, limit = 20 } = options;
-    
     let query = {
         $and: [
             { 
@@ -235,24 +225,20 @@ paintSchema.statics.searchProducts = function(searchTerm, options = {}) {
             { available }
         ]
     };
-    
     if (category) {
         query.$and.push({ category });
     }
-    
     if (minPrice !== undefined || maxPrice !== undefined) {
         const priceFilter = {};
         if (minPrice !== undefined) priceFilter.$gte = minPrice;
         if (maxPrice !== undefined) priceFilter.$lte = maxPrice;
         query.$and.push({ price: priceFilter });
     }
-    
     return this.find(query)
         .sort({ featured: -1, createdAt: -1 })
         .limit(limit);
 };
 
-// Static method to get products on sale
 paintSchema.statics.getProductsOnSale = function(limit = 12) {
     return this.find({
         originalPrice: { $ne: null, $gt: 0 },
@@ -263,7 +249,6 @@ paintSchema.statics.getProductsOnSale = function(limit = 12) {
     .limit(limit);
 };
 
-// Static method to get statistics
 paintSchema.statics.getStatistics = async function() {
     const totalProducts = await this.countDocuments();
     const availableProducts = await this.countDocuments({ available: true });
@@ -302,7 +287,7 @@ paintSchema.statics.getStatistics = async function() {
     };
 };
 
-// To ensure virtual fields are included when converting to JSON
+// Include virtuals when converting to JSON
 paintSchema.set('toJSON', { virtuals: true });
 paintSchema.set('toObject', { virtuals: true });
 
